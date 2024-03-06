@@ -1,6 +1,6 @@
-# falcon-web-demo
+# falcon-demo
 
-This is a basic demo to show how to use Falcon for web browsers, using the IIFE version of the library (i.e. an HTML script tag). It instantiates a Falcon worker engine and uses it with the [@picovoice/web-voice-processor](https://www.npmjs.com/package/@picovoice/web-voice-processor) to access (and automatically downsample) microphone audio.
+Website that takes any audio and determines exactly "who spoke when"!
 
 ## AccessKey
 
