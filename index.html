@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <script src="node_modules/@picovoice/falcon-web/dist/iife/index.js"></script>
+    <script src="node_modules/@picovoice/web-voice-processor/dist/iife/index.js"></script>
+    <script src="models/falconModel.js"></script>
+    <script type="application/javascript">
+      let falcon = null;
+      // audio reader
+      window.onload = function () {
+        const audioContext = new (window.AudioContext ||
+          window.webKitAudioContext)({ sampleRate: 16000 });
+
+        function readAudioFile(selectedFile, callback) {
+          let reader = new FileReader();
+          reader.onload = function (ev) {
+            let wavBytes = reader.result;
+            audioContext.decodeAudioData(wavBytes, callback);
+          };
+          reader.readAsArrayBuffer(selectedFile);
+        }
+
+        const fileSelector = document.getElementById("audioFile");
+        fileSelector.addEventListener("change", (event) => {
+          writeMessage("Loading audio file...");
+          const fileList = event.target.files;
+          readAudioFile(fileList[0], async (audioBuffer) => {
+            const f32PCM = audioBuffer.getChannelData(0);
+            const i16PCM = new Int16Array(f32PCM.length);
+
+            const INT16_MAX = 32767;
+            const INT16_MIN = -32768;
+            i16PCM.set(
+              f32PCM.map((f) => {
+                let i = Math.trunc(f * INT16_MAX);
+                if (f > INT16_MAX) i = INT16_MAX;
+                if (f < INT16_MIN) i = INT16_MIN;
+                return i;
+              })
+            );
+
+            writeMessage("Diarizing audio file...");
+            try {
+              const { segments } = await falcon.process(i16PCM, {
+                transfer: true,
+              });
+              setSegmentsTable(segments);
+              writeMessage("Diarizing audio file... done!");
+            } catch (e) {
+              writeMessage(e);
+            }
+          });
+        });
+
+        let timer = null;
+        let currentTimer = 0.0;
+        let audioData = [];
+        
+        
+       
+      };
+      // status
+      function writeMessage(message) {
+        console.log(message);
+        document.getElementById("status").innerHTML = message;
+      }
+      // get segments
+      function setSegmentsTable(segments) {
+        document.getElementById("segments-table").style.display = "block";
+        const table = document.getElementById("segments-table");
+        const rowCount = table.rows.length;
+        for (let i = 1; i < rowCount; i++) {
+          table.deleteRow(1);
+        }
+        segments.forEach((s) => {
+          const row = table.insertRow(-1);
+          const start = row.insertCell(0);
+          const end = row.insertCell(1);
+          const speakerTag = row.insertCell(2);
+
+          start.innerHTML = `${s.startSec.toFixed(3)}`;
+          end.innerHTML = `${s.endSec.toFixed(3)}`;
+          speakerTag.innerHTML = `${s.speakerTag}`;
+        });
+      }
+
+      // create falcon using access key and model
+      async function startFalcon(accessKey) {
+        writeMessage("Falcon is loading. Please wait...");
+        try {
+          falcon = await FalconWeb.FalconWorker.create(accessKey, falconModel);
+          document.getElementById("control").style.display = "block";
+          writeMessage("Falcon worker ready!");
+        } catch (err) {
+          writeMessage(err);
+        }
+      }
+    </script>
+    <style>
+      table {
+        margin-top: 2rem;
+        display: inline-block;
+        overflow: auto;
+      }
+
+      table {
+        border-collapse: separate;
+      }
+
+      td {
+        text-align: right;
+        vertical-align: middle;
+      }
+
+      tr:nth-child(even) {
+        background: #eee;
+      }
+    </style>
+  </head>
+ 
+
+  <style>
+    body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        margin: 0;
+        font-family: 'Arial', sans-serif;
+        background-color: #f0f0f0;
+    }
+
+    h1 {
+        margin-bottom: 20px;
+    }
+
+    #control {
+        margin-top: 20px;
+        text-align: center;
+    }
+
+    #recordAudio, #stopRecord {
+        margin-top: 10px;
+    }
+
+    #gifPlaceholder {
+        width: 300px; /* Adjust the width as needed */
+        height: 300px; /* Adjust the height as needed */
+        border-radius: 10px;
+        overflow: hidden;
+        margin-top: 20px;
+    }
+</style>
+</head>
+<body>
+<h1>Unleash the Power of Falcon!</h1>
+<div id="gifPlaceholder">
+  <div class="tenor-gif-embed" data-postid="19470881" data-share-method="host" data-aspect-ratio="1.78771" data-width="100%"><a href="https://tenor.com/view/zorbey-elon-musk-test-gif-19470881">Zorbey Elon Musk GIF</a>from <a href="https://tenor.com/search/zorbey-gifs">Zorbey GIFs</a></div> <script type="text/javascript" async src="https://tenor.com/embed.js"></script></div>
+<div id="control">
+    <label for="accessKey">AccessKey from <a href="https://console.picovoice.ai/">Picovoice Console</a>:</label>
+    <input type="text" id="accessKey" name="accessKey" />
+    <button id="submit" onclick="startFalcon(document.getElementById('accessKey').value)">Start Falcon</button>
+    <hr />
+    <label for="audioFile">Choose audio file to diarize:</label>
+    <input type="file" id="audioFile" name="audioFile" />
+</div>
+<div id="status" style="white-space: pre"></div>
+<table id="segments-table" style="display: none">
+    <colgroup>
+        <col span="1" style="width: 20%" />
+        <col span="1" style="width: 20%" />
+        <col span="1" style="width: 20%" />
+    </colgroup>
+    <tr>
+        <th>Start time (s)</th>
+        <th>End time (s)</th>
+        <th>Speaker tag</th>
+    </tr>
+</table>
+</body>
+</html>
