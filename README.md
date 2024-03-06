@@ -1,6 +1,9 @@
 # Falcon Speaker Diarization
 
 Website that takes any audio and determines exactly "who spoke when"!
+https://docs.google.com/document/d/1468xp7u3r28Wt_tMgo3iAd4eco4vtF4wnFZXEx3xEw4/edit?usp=sharing 
+
+Tutorial: 
 
 ## AccessKey
 
