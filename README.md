@@ -1,4 +1,4 @@
-# falcon-demo
+# Falcon Speaker Diarization
 
 Website that takes any audio and determines exactly "who spoke when"!
 
